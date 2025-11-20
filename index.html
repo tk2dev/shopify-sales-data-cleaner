@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CSV Column Remover</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7f8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      color: #4a90e2;
+      margin-bottom: 20px;
+    }
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+    label {
+      display: inline-block;
+      padding: 12px 25px;
+      background-color: #4a90e2;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-bottom: 20px;
+    }
+    label:hover {
+      background-color: #357ABD;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    button {
+      background-color: #4a90e2;
+      border: none;
+      padding: 12px 30px;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 10px;
+      width: 100%;
+    }
+    button:disabled {
+      background-color: #a1c4fd;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
+      background-color: #357ABD;
+    }
+    .note {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 25px;
+    }
+    .status {
+      margin-top: 15px;
+      font-weight: 600;
+      color: #2c974b; /* green */
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CSV Column Remover</h1>
+    <label for="csvFileInput">Choose CSV File</label>
+    <input type="file" id="csvFileInput" accept=".csv" />
+    <button id="processBtn" disabled>Remove Personal Info Columns & Download</button>
+    <p class="note">This works completely in your browser – your data never leaves your computer.</p>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <script>
+    const columnsToRemove = [
+      "First Name", "Last Name", "Email", "Phone", "Billing Address 1",
+      "Billing Address 2", "Billing City", "Billing Zip", "Billing Province",
+      "Billing Country", "Shipping Address 1", "Shipping Address 2",
+      "Shipping City", "Shipping Zip", "Shipping Province", "Shipping Country"
+    ];
+
+    let csvData = null;
+    let originalCSVText = "";
+
+    const fileInput = document.getElementById('csvFileInput');
+    const processBtn = document.getElementById('processBtn');
+    const statusDiv = document.getElementById('status');
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        statusDiv.textContent = "";
+        processBtn.disabled = true;
+        csvData = null;
+        originalCSVText = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        originalCSVText = event.target.result;
+        Papa.parse(originalCSVText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            if (results && results.data && results.data.length > 0) {
+              csvData = results.data;
+              statusDiv.textContent = `File loaded: ${file.name} (${csvData.length} rows detected)`;
+              processBtn.disabled = false;
+            } else {
+              statusDiv.textContent = "Failed to parse CSV or empty file.";
+              processBtn.disabled = true;
+              csvData = null;
+              originalCSVText = "";
+            }
+          },
+          error: function(err) {
+            statusDiv.textContent = `Error parsing CSV: ${err.message}`;
+            processBtn.disabled = true;
+            csvData = null;
+            originalCSVText = "";
+          }
+        });
+      };
+      reader.readAsText(file);
+    });
+
+    processBtn.addEventListener('click', function() {
+      if (!csvData) {
+        alert("Please upload a CSV file first.");
+        return;
+      }
+
+      const presentColumnsToRemove = columnsToRemove.filter(col => col in csvData[0]);
+
+      if (presentColumnsToRemove.length === 0) {
+        alert("No personal info columns found to remove. Downloading original file.");
+        const blob = new Blob([originalCSVText], {type:"text/csv;charset=utf-8"});
+        saveAs(blob, "original_file.csv");
+        return;
+      }
+
+      const cleanedData = csvData.map(row => {
+        presentColumnsToRemove.forEach(col => delete row[col]);
+        return row;
+      });
+
+      const csvOutput = Papa.unparse(cleanedData);
+      const blob = new Blob([csvOutput], {type:"text/csv;charset=utf-8"});
+      saveAs(blob, "cleaned_data.csv");
+    });
+  </script>
+</body>
+</html>
