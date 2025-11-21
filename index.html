@@ -92,10 +92,11 @@
 
   <script>
     const columnsToRemove = [
-      "First Name", "Last Name", "Email", "Phone", "Billing Address 1",
-      "Billing Address 2", "Billing City", "Billing Zip", "Billing Province",
-      "Billing Country", "Shipping Address 1", "Shipping Address 2",
-      "Shipping City", "Shipping Zip", "Shipping Province", "Shipping Country"
+      "Name", "Full Name", "full_name", "FullName", "Full_Name", "First Name", "First_Name", "first_name", "Last Name", "Last_Name", "last_name", "Email", "email", "E-mail", "Phone", "phone", "Phone Number", "phone_number",
+"Billing Name", "billing_name", "Billing First Name", "billing_first_name", "Billing Last Name", "billing_last_name",
+"Billing Address 1", "Billing Address 2", "Billing Street", "billing_address_1", "billing_address_2", "billing_street",
+"Shipping Name", "shipping_name", "Shipping First Name", "shipping_first_name", "Shipping Last Name", "shipping_last_name",
+"Shipping Address 1", "Shipping Address 2", "Shipping Street", "shipping_address_1", "shipping_address_2", "shipping_street"
     ];
 
     let csvData = null;
@@ -153,7 +154,7 @@
       const presentColumnsToRemove = columnsToRemove.filter(col => col in csvData[0]);
 
       if (presentColumnsToRemove.length === 0) {
-        alert("No personal info columns found to remove. Downloading original file.");
+        alert("Data has been cleaned. Downloading updated CSV file.");
         const blob = new Blob([originalCSVText], {type:"text/csv;charset=utf-8"});
         saveAs(blob, "original_file.csv");
         return;
